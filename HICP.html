@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Room + Exterior — 2/56B | Final Shop Version</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0F0D0A;--bg2:#1A1610;--white:#F5F1EC;--muted:#8A7A60;--border:rgba(255,255,255,0.08);--gold:#C8A020;--gold-l:#E0BC40}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--white);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden}
+.header{padding:0 24px;height:54px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(8,6,4,0.95);position:sticky;top:0;z-index:200;backdrop-filter:blur(12px)}
+.logo{font-family:'Playfair Display',serif;font-size:1rem;color:var(--white)}
+.logo em{color:var(--gold-l);font-style:italic}
+.htabs{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.htab{padding:7px 18px;background:transparent;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);transition:all .2s;font-weight:500}
+.htab.active{background:var(--gold);color:#0a0806;font-weight:700}
+.hbtn{padding:6px 14px;border-radius:6px;font-family:'Outfit',sans-serif;font-size:0.66rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-weight:500;background:transparent;border:1px solid var(--border);color:var(--muted);transition:all .2s}
+.hbtn:hover{border-color:rgba(255,255,255,0.25);color:var(--white)}
+.view{display:none}.view.active{display:block}
+
+/* LAYOUTS FIX - GRID SEPARATED */
+.int-layout{display:grid;grid-template-columns:178px 1fr 280px;height:calc(100vh - 54px)}
+.ext-layout{display:grid;grid-template-columns:1fr 300px;height:calc(100vh - 54px)}
+
+.rpanel{background:var(--bg2);border-right:1px solid var(--border);padding:14px 8px;overflow-y:auto}
+.plabel{font-size:0.56rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:10px;padding-left:5px;font-family:'JetBrains Mono',monospace}
+.rbtn{width:100%;padding:9px 9px;border-radius:7px;border:1px solid transparent;background:transparent;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:3px;transition:all .2s;text-align:left;font-family:'Outfit',sans-serif}
+.rbtn:hover{background:rgba(255,255,255,0.04)}
+.rbtn.active{background:rgba(200,160,32,0.12);border-color:rgba(200,160,32,0.3)}
+.rbtn-icon{font-size:1rem;flex-shrink:0}
+.rbtn-name{font-size:0.76rem;font-weight:500;color:rgba(245,241,236,0.7);flex:1;text-align:left}
+.rbtn.active .rbtn-name{color:var(--gold-l)}
+.rdiv{height:1px;background:var(--border);margin:5px 3px}
+
+/* CENTER PANEL */
+.cpanel, .escene{background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+.cbar, .etop{padding:11px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px}
+.rname, .etitle{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--white);line-height:1}
+.etitle small{display:block;font-size:0.58rem;font-family:'Outfit',sans-serif;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.rsub{font-size:0.6rem;color:var(--muted);margin-top:2px;letter-spacing:.4px}
+.cbar-r{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+
+/* TABS & PAIRING */
+.wtabs{display:flex;gap:3px}
+.wtab{padding:5px 10px;border-radius:5px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:'Outfit',sans-serif;font-size:0.6rem;letter-spacing:.5px;color:var(--muted);transition:all .2s;font-weight:500}
+.wtab:hover{border-color:rgba(255,255,255,0.2);color:var(--white)}
+.wtab.active{background:var(--gold);border-color:var(--gold);color:#0a0806;font-weight:700}
+.pair-row{display:flex;align-items:center;gap:7px;font-size:0.64rem;color:var(--muted)}
+.pair-row input{cursor:pointer;accent-color:var(--gold)}
+.pair-row label{cursor:pointer}
+.pair-row label:hover{color:var(--white)}
+
+/* 3D SCENE */
+.scene-wrap, .esvg{flex:1;display:flex;align-items:center;justify-content:center;padding:14px 18px;overflow:hidden}
+.scene-svg, .esvg svg{width:100%;max-width:650px}
+.scene-svg svg, .esvg svg{width:100%;display:block;filter:drop-shadow(0 14px 44px rgba(0,0,0,0.6))}
+.wall-poly{cursor:pointer}
+
+/* STRIPS */
+.wstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 14px 10px;flex-shrink:0}
+.wcard{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;cursor:pointer;transition:all .18s}
+.wcard:hover{border-color:rgba(255,255,255,0.15)}
+.wcard.active{border-color:var(--gold);background:rgba(200,160,32,0.08)}
+.wc-lbl{font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-family:'JetBrains Mono',monospace}
+.wc-row{display:flex;align-items:center;gap:6px}
+.wc-dot{width:17px;height:17px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,0.1);transition:background .3s}
+.wc-name{font-size:0.68rem;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-code{font-size:0.56rem;color:var(--gold);font-family:'JetBrains Mono',monospace;margin-top:1px}
+.sbar{margin:0 14px 10px;padding:9px 12px;background:linear-gradient(135deg,rgba(200,160,32,0.1),rgba(200,160,32,0.04));border:1px solid rgba(200,160,32,0.18);border-radius:7px;font-size:0.68rem;color:var(--muted);line-height:1.5;flex-shrink:0}
+.sbar strong{color:var(--white)}
+
+/* EXT ZONES */
+.ezstrip{padding:8px 18px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0}
+.ezcard{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 9px;cursor:pointer;transition:all .18s}
+.ezcard:hover{border-color:rgba(255,255,255,0.15)}
+.ezcard.active{border-color:var(--gold);background:rgba(200,160,32,0.08)}
+.ezlbl{font-size:0.54rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;font-family:'JetBrains Mono',monospace}
+.ezrow{display:flex;align-items:center;gap:5px}
+.ezdot{width:16px;height:16px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,0.1);transition:background .3s}
+.ezname{font-size:0.66rem;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ezcode{font-size:0.56rem;color:var(--gold);font-family:'JetBrains Mono',monospace;margin-top:1px}
+
+/* PICKER PANEL (RIGHT) */
+.ppanel, .econ{background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.pph{padding:11px 11px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ppht{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pptitle{font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.ppbadge{font-size:0.58rem;padding:2px 8px;border-radius:10px;background:rgba(200,160,32,0.14);color:var(--gold-l);border:1px solid rgba(200,160,32,0.22);font-weight:600}
+.catrow{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:5px;flex-shrink:0}
+.catrow::-webkit-scrollbar{display:none}
+.cchip{padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;font-size:0.58rem;font-family:'Outfit',sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s;color:var(--muted)}
+.cchip:hover{border-color:rgba(255,255,255,0.2);color:var(--white)}
+.cchip.active{background:var(--white);color:var(--bg);border-color:var(--white);font-weight:600}
+.psearch{padding:5px 9px;border-bottom:1px solid var(--border);flex-shrink:0}
+.psearch input{width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-family:'Outfit',sans-serif;font-size:0.7rem;background:rgba(255,255,255,0.04);color:var(--white);outline:none}
+.psearch input::placeholder{color:rgba(255,255,255,0.3)}
+.psearch input:focus{border-color:rgba(200,160,23,0.4)}
+
+/* COLOR GRID - RESPONSIVE 2 PER ROW */
+.cgrid-wrap{flex:1;overflow-y:auto;padding:8px}
+.cgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;align-content:start;padding-bottom:20px}
+.cchp{border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .18s;background:rgba(255,255,255,0.03)}
+.cchp:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.cchp.sel{border-color:var(--gold-l);box-shadow:0 0 0 1px var(--gold-l)}
+.csw{height:42px;display:flex;align-items:center;justify-content:center;font-size:1rem;color:transparent;transition:all .2s}
+.cchp.sel .csw{color:rgba(255,255,255,.9);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.cinf{padding:6px;background:rgba(10,8,5,.75)}
+.cnm{font-size:0.64rem;font-weight:600;color:var(--white);line-height:1.2;margin-bottom:2px}
+.ccd{font-size:0.54rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* EXT CONTROLS */
+.tod-tabs{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.tod-btn{padding:5px 13px;background:transparent;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:0.6rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);transition:all .2s}
+.tod-btn.on{background:var(--white);color:var(--bg);font-weight:600}
+.csec{margin-bottom:18px}
+.csec-t{font-size:0.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.sbtn{width:100%;padding:8px 11px;border-radius:7px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;gap:9px;transition:all .2s;font-family:'Outfit',sans-serif;margin-bottom:5px}
+.sbtn:hover{border-color:rgba(255,255,255,0.2)}
+.sbtn.active{background:rgba(200,160,32,0.1);border-color:rgba(200,160,32,0.4)}
+.sbv{width:28px;height:22px;border-radius:3px;overflow:hidden;display:flex;flex-direction:column;flex-shrink:0}
+.sb-l{font-size:0.7rem;color:var(--white);font-weight:500}
+.sb-s{font-size:0.58rem;color:var(--muted);margin-top:1px}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.bopt{padding:7px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:all .2s;text-align:center;font-family:'Outfit',sans-serif}
+.bopt:hover{border-color:rgba(255,255,255,0.2)}
+.bopt.active{background:rgba(200,160,32,0.1);border-color:rgba(200,160,32,0.4)}
+.bi{font-size:1rem;margin-bottom:2px}
+.bl{font-size:0.62rem;color:var(--white);font-weight:500}
+.bs{font-size:0.54rem;color:var(--muted);margin-top:1px;line-height:1.3}
+.eadv{padding:11px 13px;background:linear-gradient(135deg,rgba(200,160,32,0.08),rgba(200,160,32,0.04));border:1px solid rgba(200,160,32,0.18);border-radius:7px;font-size:0.68rem;color:var(--muted);line-height:1.6}
+.eadv strong{color:var(--white)}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--white);color:var(--bg);padding:9px 22px;border-radius:30px;font-size:0.74rem;font-weight:600;z-index:500;transition:transform .3s;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.3)}
+
+@media(max-width:900px){
+  .int-layout,.ext-layout{grid-template-columns:1fr}
+  .rpanel{display:flex;gap:4px;padding:7px;border-right:none;border-bottom:1px solid var(--border);overflow-x:auto;height:auto}
+  .rbtn{flex-direction:column;min-width:56px;padding:5px 6px;text-align:center}
+  .rbtn-name{font-size:0.54rem}
+  .rdiv{display:none}
+  .ppanel,.econ{border-left:none;border-top:1px solid var(--border);max-height:350px;overflow-y:auto}
+  .wstrip{grid-template-columns:repeat(3,1fr)}
+  .cgrid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Your Home <em>3D Visualizer</em></div>
+  <div class="htabs">
+    <button class="htab active" onclick="sw('int')">🏠 Interior</button>
+    <button class="htab" onclick="sw('ext')">🏡 Exterior</button>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="hbtn" onclick="doReset()">↺ Reset</button>
+    <button class="hbtn" style="border-color:rgba(200,160,32,0.4);color:var(--gold-l);font-weight:700" onclick="doSummary()">📋 Download PDF</button>
+  </div>
+</div>
+
+<div class="view active" id="view-int">
+  <div class="int-layout">
+    <div class="rpanel" id="rpanel"></div>
+    <div class="cpanel">
+      <div class="cbar">
+        <div><div class="rname" id="rname">Loading...</div><div class="rsub" id="rsub"></div></div>
+        <div class="cbar-r">
+          <div class="wtabs" id="wtabs"></div>
+          <div class="pair-row">
+            <input type="checkbox" id="pcb" onchange="togglePair()">
+            <label for="pcb">Apply same colour to <strong>opposite wall</strong></label>
+          </div>
+        </div>
+      </div>
+      <div class="scene-wrap"><div class="scene-svg" id="svg3d"></div></div>
+      <div class="wstrip" id="wstrip"></div>
+      <div class="sbar" id="sbar"></div>
+    </div>
+    
+    <div class="ppanel">
+      <div class="pph">
+        <div class="ppht"><div class="pptitle">Paint Library</div><div class="ppbadge" id="pbadge">Wall</div></div>
+        <div class="catrow" id="catrow"></div>
+      </div>
+      <div class="psearch"><input id="si" placeholder="Search colour or code..." oninput="fc()"></div>
+      <div class="cgrid-wrap"><div class="cgrid" id="cgrid"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="view-ext">
+  <div class="ext-layout">
+    <div class="escene">
+      <div class="etop">
+        <div><div class="etitle"><small>Front Elevation · Street View</small>2/56B — Dado Style</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:0.62rem;color:var(--muted)">Click a zone below to change colour</span>
+          <div class="tod-tabs">
+            <button class="tod-btn on" id="evDay" onclick="tod('day')">☀ Day</button>
+            <button class="tod-btn" id="evDusk" onclick="tod('dusk')">🌆 Dusk</button>
+            <button class="tod-btn" id="evNight" onclick="tod('night')">🌙 Night</button>
+          </div>
+        </div>
+      </div>
+      <div class="esvg" id="esvg"></div>
+      <div class="ezstrip" id="ezstrip"></div>
+    </div>
+    
+    <div class="econ">
+      <div class="csec"><div class="csec-t">Split Position</div><div id="esplits"></div></div>
+      <div class="csec"><div class="csec-t">Border Line</div><div class="bgrid" id="ebordbg"></div></div>
+      
+      <div class="csec" style="flex:1; display:flex; flex-direction:column; border-top:1px solid var(--border); padding-top:15px; margin-top:5px;">
+        <div class="csec-t" id="eptitle" style="margin-bottom:12px; color:var(--white);">Exterior Colors</div>
+        <div class="catrow" id="ext-catrow"></div>
+        <div class="psearch" style="margin:5px 0;"><input id="esi" placeholder="Search exterior colour..." oninput="efc()"></div>
+        <div class="cgrid-wrap" style="padding:4px 0;"><div class="cgrid" id="ext-cgrid"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── MASSIVE CATEGORIZED COLOR PALETTE ───
+const PAL = [
+  // WHITES
+  {id:'AP-OW2',name:'Pristine',hex:'#FDF8F0',cat:'Whites',code:'AP OW2'},
+  {id:'AP-W001',name:'Brilliant White',hex:'#F8F8F5',cat:'Whites',code:'AP W001'},
+  {id:'AP-0945',name:'Morning Glory',hex:'#F5F0E6',cat:'Whites',code:'0945'},
+  {id:'AP-L104',name:'Cotton Wool',hex:'#F8F4EC',cat:'Whites',code:'L104'},
+  {id:'AP-L107',name:'Classic White',hex:'#F4F5F0',cat:'Whites',code:'L107'},
+  
+  // NEUTRALS & BEIGE
+  {id:'AP-OW8',name:'Warm Sand',hex:'#F0E8D4',cat:'Neutrals',code:'AP OW8'},
+  {id:'AP-OW6',name:'Off White',hex:'#EEE8DC',cat:'Neutrals',code:'AP OW6'},
+  {id:'AP-0316',name:'Cream Pie',hex:'#F4E8D4',cat:'Neutrals',code:'0316'},
+  {id:'AP-0315',name:'Ivory',hex:'#EFE5D2',cat:'Neutrals',code:'0315'},
+  {id:'AP-0311',name:'Sugarcane',hex:'#EBE0C8',cat:'Neutrals',code:'0311'},
+  {id:'AP-0944',name:'Soft Glow',hex:'#F6EBD9',cat:'Neutrals',code:'0944'},
+  {id:'AP-L164',name:'White Butter',hex:'#F2EEE2',cat:'Neutrals',code:'L164'},
+  {id:'AP-L151',name:'Raw Silk',hex:'#F0E4D4',cat:'Neutrals',code:'L151'},
+  
+  // BLUES
+  {id:'AP-6300',name:'Powder Blue',hex:'#C8DFF0',cat:'Blues',code:'AP 6300'},
+  {id:'AP-6320',name:'Morning Mist',hex:'#C8D4E0',cat:'Blues',code:'AP 6320'},
+  {id:'AP-0941',name:'Daybreak',hex:'#D8E4E8',cat:'Blues',code:'0941'},
+  {id:'AP-7263',name:'Blue Vision',hex:'#9EB9CD',cat:'Blues',code:'7263'},
+  {id:'AP-7281',name:'Cascade',hex:'#7A9BB8',cat:'Blues',code:'7281'},
+  {id:'AP-1A3860',name:'Midnight Sea',hex:'#2A3A52',cat:'Blues',code:'7310'},
+  {id:'AP-6380',name:'Deep Navy',hex:'#1A3860',cat:'Blues',code:'AP 6380'},
+  {id:'AP-5160',name:'Deep Teal',hex:'#3A7878',cat:'Blues',code:'AP 5160'},
+
+  // GREENS
+  {id:'AP-6060',name:'Herbal Garden',hex:'#B8C4A4',cat:'Greens',code:'6060'},
+  {id:'AP-7783',name:'Greenery',hex:'#98B48A',cat:'Greens',code:'7783'},
+  {id:'AP-7541',name:'Meadow Path',hex:'#AAB890',cat:'Greens',code:'7541'},
+  {id:'AP-7705',name:'Spring Vibe',hex:'#C8D8B0',cat:'Greens',code:'7705'},
+  {id:'AP-7632',name:'Earthen Green',hex:'#4A5A42',cat:'Greens',code:'7632'},
+  
+  // EARTH & ORANGE
+  {id:'AP-2220',name:'Terracotta',hex:'#D4906A',cat:'Earth',code:'AP 2220'},
+  {id:'AP-7955',name:'Sunset Orange',hex:'#E07840',cat:'Earth',code:'7955'},
+  {id:'AP-7994',name:'Amber',hex:'#D86A38',cat:'Earth',code:'7994'},
+  
+  // YELLOWS
+  {id:'AP-3060',name:'Saffron',hex:'#F0C048',cat:'Yellows',code:'AP 3060'},
+  {id:'AP-0980',name:'Sunflower',hex:'#F8D060',cat:'Yellows',code:'0980'},
+  {id:'AP-7902',name:'Golden Yellow',hex:'#F0B840',cat:'Yellows',code:'7902'},
+
+  // ACCENTS & PINKS
+  {id:'AP-0503',name:'Rose White',hex:'#F4E0E2',cat:'Accents',code:'0503'},
+  {id:'AP-8050',name:'Soft Pink',hex:'#E8B8C0',cat:'Accents',code:'8050'},
+  {id:'AP-8094',name:'Deep Crimson',hex:'#8A3040',cat:'Accents',code:'8094'},
+  
+  // GREYS
+  {id:'AP-8236',name:'Iced Silver',hex:'#C8D2D8',cat:'Greys',code:'8236'},
+  {id:'AP-8304',name:'Pebble',hex:'#B8B8B4',cat:'Greys',code:'8304'},
+  {id:'AP-8303',name:'Grey Matter',hex:'#888A88',cat:'Greys',code:'8303'},
+  {id:'AP-7986',name:'Charcoal',hex:'#3A3530',cat:'Greys',code:'AP 7986'}
+];
+
+const ROOMS = [
+  {id:'futurehall',name:'Future Hall',emoji:'🏠',sub:'Dark Granite · Sofa + TV planned',
+   floor:'#4A3E34',ceiling:'#F0EDE8',walls:['Back Wall','Left Wall','Right Wall (TV)'],pairs:[[0],[1,2]],
+   colors:['AP-OW2','AP-OW2','AP-5160'],
+   suggestion:'<strong>Pristine White + Deep Teal.</strong> Matte finish for Teal wall, Silk/Washable for Pristine walls.', furn:'living'},
+  {id:'bedroom',name:'Bedroom',emoji:'🛏️',sub:'Dark Granite · Black Bed',
+   floor:'#3A3028',ceiling:'#F0EDE8',walls:['Back (Headboard)','Left Wall','Right Wall'],pairs:[[0],[1,2]],
+   colors:['AP-6380','AP-OW2','AP-OW2'],
+   suggestion:'<strong>Deep Navy + Pristine.</strong> Navy behind bed absorbs light for better sleep. Matte for Navy.', furn:'bed'},
+  {id:'hall',name:'Dining Hall',emoji:'🛋️',sub:'Cream Terrazzo · Gathering Space',
+   floor:'#E0D8C4',ceiling:'#F5F5F2',walls:['Back Wall','Left Wall (Shelf)','Right Wall'],pairs:[[0],[1,2]],
+   colors:['AP-OW2','AP-2220','AP-OW2'],
+   suggestion:'<strong>Pristine + Terracotta.</strong> Warm earth tones stimulate appetite. Perfect for dining.', furn:'hall'},
+  {id:'kitchen',name:'Kitchen',emoji:'🍳',sub:'Stain Resistant · Easy Clean',
+   floor:'#6A5E54',ceiling:'#F5F5F2',walls:['Back Wall','Left Wall','Right Wall (Tiles)'],pairs:[[0,1],[2]],
+   colors:['AP-OW2','AP-OW2','TILES'],
+   suggestion:'<strong>Pristine White (Apcolite Premium).</strong> Need extra washable coating here to wipe oil stains.', furn:'kitchen'},
+  {id:'pooja',name:'Pooja Room',emoji:'🪔',sub:'Sacred Aura · Brass Lamps',
+   floor:'#3A3028',ceiling:'#F0EDE8',walls:['Back Wall','Left Wall','Right Wall'],pairs:[[0,1,2]],
+   colors:['AP-3060','AP-3060','AP-3060'],
+   suggestion:'<strong>All walls Saffron.</strong> Complete immersive traditional vibe. Washable finish recommended.', furn:'pooja'},
+  {id:'bathroom',name:'Bathroom',emoji:'🚿',sub:'Above 7ft Tiles',
+   floor:'#E0D8C4',ceiling:'#F5F5F2',walls:['Ceiling Area','Top Wall', 'Right Wall'],pairs:[[0,1,2]],
+   colors:['AP-W001','AP-W001','AP-W001'],
+   suggestion:'<strong>Brilliant White.</strong> Pure white opens up small bathroom spaces. Use anti-fungal paint.', furn:'none'},
+  {id:'veranda',name:'Veranda',emoji:'🌤️',sub:'Front Space · Blue Sheet Roof',
+   floor:'#B0A898',ceiling:'#E0D8C4',walls:['Front Wall','Side Wall', 'Pillar'],pairs:[[0,1,2]],
+   colors:['AP-OW6','AP-OW6','AP-OW6'],
+   suggestion:'<strong>Off White.</strong> Protects from harsh blue light reflection of the roof sheet.', furn:'none'}
+];
+
+const EXT_ZONES=[
+  {id:'upper',label:'Upper Wall',name:'Powder Blue',code:'AP 6300',hex:'#C8DFF0',adv:'Apex Ultima (Dust/Rain Proof)'},
+  {id:'lower',label:'Base Dado',name:'Deep Navy',code:'AP 6380',hex:'#1A3860',adv:'Apex Advanced (Tougher protection)'},
+  {id:'border',label:'Border',name:'White Line',code:'AP W001',hex:'#FFFFFF',adv:'Apex Emulsion'},
+  {id:'gate',label:'Gate',name:'Matte Black',code:'Enamel',hex:'#1a1a1a',adv:'Premium Gloss/Matte Enamel'},
+  {id:'compound',label:'Compound',name:'Off White',code:'AP OW6',hex:'#EEE8DC',adv:'Apex Exterior'},
+];
+
+const EXT_SPLITS=[
+  {id:'s25',label:'25% Dark',sub:'Subtle base',ratio:0.25},
+  {id:'s30',label:'30% Dark',sub:'Elegant ✓',ratio:0.30},
+  {id:'s40',label:'40% Dark',sub:'Strong look',ratio:0.40},
+  {id:'s50',label:'50% Equal',sub:'Bold split',ratio:0.50},
+];
+
+const EXT_BORDS=[
+  {id:'none',icon:'✕',label:'None',sub:'Clean modern'},
+  {id:'white',icon:'━',label:'White Line',sub:'2–3cm thin'},
+  {id:'cream',icon:'▬',label:'Cream',sub:'5–8cm warm'},
+  {id:'stone',icon:'▪',label:'Stone Band',sub:'Raised plaster'},
+];
+
+// STATE
+let vw='int',ri=0,wi=0,cat='All',ecat='All',pair=false;
+let RS={};ROOMS.forEach(r=>{RS[r.id]=[...r.colors];});
+let EZS={};EXT_ZONES.forEach(z=>{EZS[z.id]=z.hex;});
+let esplit='s30',ebord='white',ezone='upper',dayMode='day';
+
+function R(){return ROOMS[ri];}
+function C(id){if(!id||id==='TILES')return null;return PAL.find(p=>p.id===id);}
+function getHex(id){const c=C(id);return c?c.hex:'#EDE0CE';}
+function sh(h,a){try{let r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);r=Math.max(0,Math.min(255,r+a));g=Math.max(0,Math.min(255,g+a));b=Math.max(0,Math.min(255,b+a));return '#'+r.toString(16).padStart(2,'0')+g.toString(16).padStart(2,'0')+b.toString(16).padStart(2,'0');}catch(e){return h;}}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+
+// ─── 3D ROOM SVG ───
+function room3d(room,wc){
+  const W=800,H=520;
+  const B={x1:210,y1:86,x2:590,y2:86,x3:590,y3:344,x4:210,y4:344};
+  const c0=getHex(wc[0]),c1=wc[1]==='TILES'?'#7A6858':getHex(wc[1]),c2=wc[2]==='TILES'?'#7A6858':getHex(wc[2]);
+  const ws=(i)=>i===wi?'stroke="#E0BC40" stroke-width="2.5" stroke-linejoin="round"':'stroke="rgba(0,0,0,0.18)" stroke-width="0.8"';
+  const tiles=(()=>{if(wc[2]!=='TILES')return '';let t='';const tc=['#9A8870','#7A6850','#B09870','#8A7860','#6A5840','#A09078'];for(let r=0;r<9;r++)for(let c=0;c<6;c++){const x=B.x2+5+c*43,y=B.y1+10+r*30;if(x<W-8&&y<B.y3+15)t+='<rect x="'+x+'" y="'+y+'" width="39" height="27" rx="1" fill="'+tc[(r*2+c)%tc.length]+'" opacity="0.86"/>';}return t;})();
+  const furn=getFurn(room,B);
+  const wins=getWins(room);
+  const drs=getDoors(room,B);
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="white" stop-opacity="0.4"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient></defs>
+<polygon points="0,0 ${W},0 ${B.x2},${B.y2} ${B.x1},${B.y1}" fill="${sh(room.ceiling,-12)}" stroke="rgba(0,0,0,0.18)" stroke-width="0.5"/>
+<polygon points="0,${H} ${W},${H} ${B.x3},${B.y3} ${B.x4},${B.y4}" fill="${room.floor}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<polygon points="0,${H} ${W},${H} ${B.x3},${B.y3} ${B.x4},${B.y4}" fill="url(#fg)" opacity="0.1"/>
+<polygon id="w1" class="wall-poly" onclick="wsvg(1)" points="0,0 ${B.x1},${B.y1} ${B.x4},${B.y4} 0,${H}" fill="${sh(c1,-22)}" ${ws(1)}/>
+<polygon id="w2" class="wall-poly" onclick="wsvg(2)" points="${W},0 ${B.x2},${B.y2} ${B.x3},${B.y3} ${W},${H}" fill="${sh(c2,-38)}" ${ws(2)}/>
+${tiles}
+<rect id="w0" class="wall-poly" onclick="wsvg(0)" x="${B.x1}" y="${B.y1}" width="${B.x2-B.x1}" height="${B.y4-B.y1}" fill="${c0}" ${ws(0)}/>
+${wins}${furn}${drs}
+<ellipse cx="400" cy="68" rx="96" ry="30" fill="rgba(255,255,240,0.06)"/>
+<circle cx="400" cy="70" r="15" fill="rgba(255,255,255,0.55)"/>
+<circle cx="400" cy="70" r="9" fill="rgba(255,255,255,0.82)"/>
+<line x1="400" y1="60" x2="400" y2="0" stroke="rgba(200,200,200,0.28)" stroke-width="1.5"/>
+<line x1="0" y1="0" x2="${B.x1}" y2="${B.y1}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5"/>
+<line x1="${W}" y1="0" x2="${B.x2}" y2="${B.y2}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5"/>
+<line x1="0" y1="${H}" x2="${B.x4}" y2="${B.y4}" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
+<line x1="${W}" y1="${H}" x2="${B.x3}" y2="${B.y3}" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
+${wi===0?`<text x="400" y="222" text-anchor="middle" font-size="11" font-family="JetBrains Mono,monospace" fill="rgba(224,188,64,0.55)" letter-spacing="2">BACK WALL</text>`:''}
+${wi===1?`<text x="88" y="240" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(224,188,64,0.55)" transform="rotate(-18,88,240)">LEFT</text>`:''}
+${wi===2?`<text x="712" y="240" text-anchor="middle" font-size="10" font-family="JetBrains Mono,monospace" fill="rgba(224,188,64,0.55)" transform="rotate(18,712,240)">RIGHT</text>`:''}
+</svg>`;
+}
+
+function getFurn(room,B){
+  const wd='#7A4820';
+  if(room.furn==='living')return`<rect x="228" y="276" width="230" height="64" rx="5" fill="#2A2018" opacity="0.88"/><rect x="232" y="254" width="222" height="26" rx="4" fill="#221C10"/><rect x="232" y="261" width="54" height="76" rx="4" fill="#302818"/><rect x="400" y="261" width="54" height="76" rx="4" fill="#302818"/><rect x="232" y="278" width="222" height="57" rx="3" fill="#E8D8B8" opacity="0.2"/><rect x="600" y="260" width="168" height="66" rx="3" fill="#2A2018" opacity="0.82"/><rect x="604" y="145" width="152" height="96" rx="3" fill="#1a1a2a"/><rect x="607" y="148" width="146" height="90" rx="2" fill="#243040"/><rect x="672" y="241" width="18" height="18" fill="#222"/><rect x="273" y="354" width="132" height="50" rx="4" fill="#3A2010" opacity="0.72"/><rect x="248" y="268" width="54" height="30" rx="4" fill="#F0C898" opacity="0.5"/><rect x="374" y="268" width="54" height="30" rx="4" fill="#D4C4A8" opacity="0.5"/>`;
+  if(room.furn==='bed')return`<rect x="213" y="263" width="358" height="77" rx="4" fill="#121212"/><rect x="217" y="267" width="350" height="59" rx="3" fill="#1a1a1a"/><rect x="213" y="313" width="358" height="124" rx="4" fill="#D8D0C0"/><rect x="228" y="302" width="86" height="36" rx="5" fill="#F0EBE0"/><rect x="328" y="302" width="86" height="36" rx="5" fill="#E8E0D0"/><rect x="228" y="323" width="328" height="98" rx="3" fill="#E0CFBC" opacity="0.86"/><rect x="170" y="306" width="42" height="132" rx="3" fill="#5A3A20" opacity="0.72"/><rect x="574" y="306" width="42" height="132" rx="3" fill="#5A3A20" opacity="0.72"/><ellipse cx="191" cy="302" rx="13" ry="5" fill="#D4B870" opacity="0.85"/><rect x="188" y="281" width="6" height="21" fill="#888" opacity="0.8"/>`;
+  if(room.furn==='hall')return`<rect x="270" y="140" width="200" height="122" rx="4" fill="#1a1a2a"/><rect x="273" y="143" width="194" height="116" rx="3" fill="#243040"/><rect x="358" y="262" width="20" height="20" fill="#222"/><rect x="262" y="290" width="216" height="50" rx="3" fill="#3A2010" opacity="0.82"/><rect x="523" y="263" width="158" height="102" rx="4" fill="#5A3820" opacity="0.72"/><rect x="536" y="365" width="18" height="58" fill="#4A3018" opacity="0.65"/><rect x="648" y="365" width="18" height="58" fill="#4A3018" opacity="0.65"/>`;
+  if(room.furn==='kitchen')return`<rect x="0" y="343" width="448" height="33" rx="2" fill="#888078"/><rect x="0" y="343" width="448" height="5" fill="rgba(255,255,255,0.12)"/><rect x="0" y="374" width="448" height="146" fill="#706858"/><rect x="183" y="351" width="138" height="62" rx="3" fill="#606060"/><rect x="187" y="354" width="130" height="56" rx="2" fill="#4a4a4a"/><rect x="250" y="342" width="4" height="12" fill="#aaa"/><rect x="246" y="342" width="12" height="3" rx="2" fill="#aaa"/><rect x="0" y="98" width="434" height="23" fill="#7A4820" opacity="0.9"/><ellipse cx="60" cy="93" rx="24" ry="13" fill="#888" opacity="0.82"/><ellipse cx="120" cy="91" rx="20" ry="12" fill="#999" opacity="0.75"/><ellipse cx="178" cy="93" rx="22" ry="13" fill="#888" opacity="0.8"/><ellipse cx="80" cy="343" rx="28" ry="18" fill="#8a8a8a" opacity="0.85"/><ellipse cx="168" cy="345" rx="22" ry="15" fill="#999" opacity="0.75"/>`;
+  if(room.furn==='pooja')return`<rect x="253" y="236" width="258" height="64" rx="3" fill="#5A3A18" opacity="0.92"/><rect x="257" y="216" width="250" height="24" rx="2" fill="#6A4A20" opacity="0.92"/><rect x="336" y="143" width="92" height="106" rx="4" fill="#7A5020" opacity="0.92"/><rect x="340" y="147" width="84" height="98" rx="3" fill="#C8A850" opacity="0.55"/><rect x="284" y="183" width="8" height="36" fill="#C8A020"/><ellipse cx="288" cy="180" rx="15" ry="9" fill="#E0B820"/><ellipse cx="288" cy="177" rx="6" ry="3" fill="#FFF0A0" opacity="0.85"/><rect x="472" y="183" width="8" height="36" fill="#C8A020"/><ellipse cx="476" cy="180" rx="15" ry="9" fill="#E0B820"/><ellipse cx="476" cy="177" rx="6" ry="3" fill="#FFF0A0" opacity="0.85"/><ellipse cx="288" cy="246" rx="16" ry="7" fill="#FF6040" opacity="0.75"/><ellipse cx="476" cy="246" rx="16" ry="7" fill="#FF8020" opacity="0.75"/><line x1="382" y1="143" x2="378" y2="95" stroke="#8B6040" stroke-width="1.5"/><line x1="382" y1="143" x2="386" y2="91" stroke="#8B6040" stroke-width="1.5"/><circle cx="378" cy="95" r="2.5" fill="#FF7030" opacity="0.85"/><circle cx="386" cy="91" r="2.5" fill="#FF7030" opacity="0.85"/>`;
+  return '';
+}
+
+function getWins(room){
+  const wd='#7A4820';
+  if(room.id==='futurehall')return`<rect x="256" y="98" width="104" height="124" rx="2" fill="${wd}"/><rect x="259" y="101" width="98" height="118" rx="1" fill="#C8D8DC" opacity="0.52"/><line x1="308" y1="101" x2="308" y2="219" stroke="${wd}" stroke-width="2.5"/><line x1="259" y1="160" x2="357" y2="160" stroke="${wd}" stroke-width="2.5"/><rect x="48" y="128" width="82" height="100" rx="2" fill="${wd}"/><rect x="51" y="131" width="76" height="94" rx="1" fill="#C8D8DC" opacity="0.45"/><line x1="90" y1="131" x2="90" y2="225" stroke="${wd}" stroke-width="2"/><line x1="51" y1="178" x2="127" y2="178" stroke="${wd}" stroke-width="2"/>`;
+  if(room.id==='bedroom')return`<rect x="460" y="96" width="94" height="120" rx="2" fill="${wd}"/><rect x="463" y="99" width="88" height="114" rx="1" fill="#C8D8DC" opacity="0.5"/><line x1="507" y1="99" x2="507" y2="213" stroke="${wd}" stroke-width="2.5"/><line x1="463" y1="156" x2="551" y2="156" stroke="${wd}" stroke-width="2.5"/>`;
+  if(room.id==='hall')return`<rect x="40" y="116" width="90" height="114" rx="2" fill="${wd}"/><rect x="43" y="119" width="84" height="108" rx="1" fill="#C8D8DC" opacity="0.5"/><line x1="85" y1="119" x2="85" y2="227" stroke="${wd}" stroke-width="2"/><line x1="43" y1="173" x2="127" y2="173" stroke="${wd}" stroke-width="2"/>`;
+  if(room.id==='kitchen')return`<rect x="263" y="100" width="94" height="104" rx="2" fill="${wd}"/><rect x="266" y="103" width="88" height="98" rx="1" fill="#C0D4B0" opacity="0.52"/><line x1="310" y1="103" x2="310" y2="201" stroke="${wd}" stroke-width="2.5"/><line x1="266" y1="152" x2="354" y2="152" stroke="${wd}" stroke-width="2.5"/>`;
+  return '';
+}
+
+function getDoors(room){
+  const wd='#7A4820';
+  if(room.id!=='pooja'&&room.id!=='kitchen'&&room.id!=='bathroom'&&room.id!=='veranda')return`<rect x="658" y="226" width="98" height="178" rx="2" fill="${wd}" opacity="0.86"/><rect x="661" y="229" width="92" height="84" rx="1" fill="rgba(0,0,0,0.12)"/><rect x="661" y="320" width="92" height="82" rx="1" fill="rgba(0,0,0,0.1)"/><circle cx="657" cy="318" r="5" fill="#C8A020"/>`;
+  return '';
+}
+
+// ─── EXTERIOR SVG ───
+function extSVG(){
+  const sp=EXT_SPLITS.find(s=>s.id===esplit);
+  const upper=EZS.upper,lower=EZS.lower,border=EZS.border,gate=EZS.gate,compound=EZS.compound;
+  const HX=44,HY=95,HW=712,HH=300;
+  const splitY=HY+Math.round(HH*(1-sp.ratio));
+  let bord='';
+  if(ebord==='white')bord=`<rect x="${HX}" y="${splitY-2}" width="${HW}" height="4" fill="${border}" opacity="0.9"/>`;
+  else if(ebord==='cream')bord=`<rect x="${HX}" y="${splitY-7}" width="${HW}" height="14" fill="#D8C090"/><rect x="${HX}" y="${splitY-8}" width="${HW}" height="2" fill="rgba(255,255,255,0.35)"/><rect x="${HX}" y="${splitY+6}" width="${HW}" height="2" fill="rgba(0,0,0,0.18)"/>`;
+  else if(ebord==='stone')bord=`<rect x="${HX-4}" y="${splitY-9}" width="${HW+8}" height="18" fill="#C8B898"/><rect x="${HX-4}" y="${splitY-10}" width="${HW+8}" height="3" fill="rgba(255,255,255,0.5)"/><rect x="${HX-4}" y="${splitY+8}" width="${HW+8}" height="3" fill="rgba(0,0,0,0.22)"/>`;
+  let sky1='#5BB8D4',sky2='#A8D8F0',gnd='#7A6A50';
+  if(dayMode==='dusk'){sky1='#E87040';sky2='#F0B060';gnd='#6A5A40';}
+  if(dayMode==='night'){sky1='#0A1428';sky2='#142238';gnd='#3A3020';}
+  const uid='e'+Math.random().toString(36).slice(2,5);
+  const clouds=dayMode==='day'?`<ellipse cx="128" cy="52" rx="72" ry="24" fill="rgba(255,255,255,0.78)"/><ellipse cx="174" cy="42" rx="54" ry="20" fill="rgba(255,255,255,0.88)"/><ellipse cx="88" cy="58" rx="40" ry="17" fill="rgba(255,255,255,0.68)"/><ellipse cx="580" cy="68" rx="60" ry="22" fill="rgba(255,255,255,0.65)"/><ellipse cx="626" cy="57" rx="44" ry="18" fill="rgba(255,255,255,0.72)"/>`:
+    dayMode==='night'?Array.from({length:35},(_,i)=>`<circle cx="${15+i*22+(i%3)*9}" cy="${6+i*11+(i%4)*13}" r="1.2" fill="rgba(255,255,255,${0.3+0.4*(i%3)/3})"/>`).join(''):'';
+  const nGlow=dayMode==='night'?`<rect x="90" y="190" width="152" height="136" fill="rgba(255,220,100,0.17)" rx="2"/><rect x="542" y="190" width="152" height="136" fill="rgba(255,220,100,0.17)" rx="2"/><ellipse cx="400" cy="404" rx="76" ry="16" fill="rgba(255,200,80,0.14)"/>`:''
+  const lamp=dayMode!=='day'?`<line x1="778" y1="400" x2="778" y2="250" stroke="#888" stroke-width="4"/><line x1="778" y1="250" x2="754" y2="244" stroke="#888" stroke-width="3"/><ellipse cx="750" cy="247" rx="12" ry="5" fill="${dayMode==='night'?'rgba(255,220,100,0.9)':'rgba(255,200,80,0.6)'}"/>${dayMode==='night'?'<ellipse cx="750" cy="260" rx="38" ry="26" fill="rgba(255,220,100,0.1)"/>':''}`:''
+  const wd='#7A4820';
+  const cmpSh=sh(compound,-22);
+  return `<svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="sk${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sky1}"/><stop offset="70%" stop-color="${sky2}"/><stop offset="100%" stop-color="${sh(sky2,20)}"/></linearGradient></defs>
+<rect x="0" y="0" width="800" height="412" fill="url(#sk${uid})"/>
+${clouds}
+<rect x="0" y="400" width="800" height="120" fill="${gnd}"/>
+<rect x="0" y="410" width="800" height="28" fill="${sh(gnd,15)}"/>
+<line x1="0" y1="410" x2="800" y2="410" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+${Array.from({length:16},(_,i)=>`<line x1="${i*52}" y1="410" x2="${i*52}" y2="438" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`).join('')}
+<rect x="0" y="374" width="800" height="40" fill="${compound}"/>
+<rect x="0" y="372" width="800" height="5" fill="${cmpSh}"/>
+<rect x="0" y="374" width="800" height="3" fill="rgba(255,255,255,0.1)"/>
+<ellipse cx="400" cy="406" rx="318" ry="8" fill="rgba(0,0,0,${dayMode==='night'?0.5:0.28})"/>
+<rect x="${HX-12}" y="${HY-28}" width="${HW+24}" height="36" fill="${sh(compound,-30)}" rx="2"/>
+<rect x="${HX-12}" y="${HY-34}" width="${HW+24}" height="10" fill="${sh(compound,-45)}" rx="1"/>
+<rect x="${HX-14}" y="${HY-36}" width="${HW+28}" height="5" fill="${sh(compound,-12)}"/>
+<rect x="${HX}" y="${HY}" width="${HW}" height="${splitY-HY}" fill="${upper}"/>
+<rect x="${HX}" y="${splitY}" width="${HW}" height="${HY+HH-splitY}" fill="${lower}"/>
+${bord}
+<rect x="${HX}" y="${HY}" width="8" height="${HH}" fill="rgba(0,0,0,0.12)"/>
+<rect x="${HX+HW-8}" y="${HY}" width="8" height="${HH}" fill="rgba(0,0,0,0.1)"/>
+${nGlow}
+<rect x="88" y="178" width="174" height="148" rx="3" fill="${cmpSh}"/>
+<rect x="92" y="182" width="166" height="140" rx="2" fill="${dayMode==='night'?'rgba(255,215,95,0.58)':'rgba(180,225,240,0.48)'}"/>
+<line x1="175" y1="182" x2="175" y2="322" stroke="${cmpSh}" stroke-width="4"/>
+<line x1="92" y1="252" x2="258" y2="252" stroke="${cmpSh}" stroke-width="4"/>
+<line x1="133" y1="182" x2="133" y2="322" stroke="${sh(cmpSh,-15)}" stroke-width="2"/>
+<line x1="217" y1="182" x2="217" y2="322" stroke="${sh(cmpSh,-15)}" stroke-width="2"/>
+<rect x="86" y="322" width="178" height="9" rx="1" fill="${sh(compound,-14)}"/>
+<rect x="538" y="178" width="174" height="148" rx="3" fill="${cmpSh}"/>
+<rect x="542" y="182" width="166" height="140" rx="2" fill="${dayMode==='night'?'rgba(255,215,95,0.58)':'rgba(180,225,240,0.48)'}"/>
+<line x1="625" y1="182" x2="625" y2="322" stroke="${cmpSh}" stroke-width="4"/>
+<line x1="542" y1="252" x2="708" y2="252" stroke="${cmpSh}" stroke-width="4"/>
+<line x1="583" y1="182" x2="583" y2="322" stroke="${sh(cmpSh,-15)}" stroke-width="2"/>
+<line x1="667" y1="182" x2="667" y2="322" stroke="${sh(cmpSh,-15)}" stroke-width="2"/>
+<rect x="536" y="322" width="178" height="9" rx="1" fill="${sh(compound,-14)}"/>
+<rect x="325" y="238" width="150" height="164" rx="4" fill="${sh(gate,15)}" opacity="0.96"/>
+<rect x="330" y="243" width="140" height="74" rx="3" fill="${sh(gate,28)}" opacity="0.55"/>
+<rect x="330" y="324" width="140" height="72" rx="3" fill="${sh(gate,28)}" opacity="0.45"/>
+<rect x="330" y="241" width="140" height="6" rx="3" fill="rgba(255,255,255,0.07)"/>
+<circle cx="469" cy="326" r="7" fill="#C8A020"/>
+<rect x="466" y="318" width="4" height="16" rx="2" fill="#D4B020"/>
+<rect x="336" y="205" width="128" height="32" rx="3" fill="rgba(255,255,255,0.9)"/>
+<text x="400" y="226" text-anchor="middle" font-size="13" font-family="Outfit,sans-serif" fill="#333" font-weight="700">2 / 56B</text>
+<rect x="304" y="398" width="192" height="12" rx="2" fill="${sh(compound,-20)}"/>
+<rect x="316" y="410" width="168" height="8" rx="2" fill="${sh(compound,-10)}"/>
+<rect x="72" y="354" width="252" height="26" rx="3" fill="${gate}"/>
+<rect x="72" y="349" width="252" height="9" rx="2" fill="${sh(gate,18)}"/>
+${Array.from({length:8},(_,i)=>`<line x1="${87+i*30}" y1="349" x2="${87+i*30}" y2="380" stroke="${sh(gate,25)}" stroke-width="2" opacity="0.7"/>`).join('')}
+<rect x="65" y="334" width="13" height="52" rx="2" fill="${sh(compound,-32)}"/>
+<rect x="319" y="334" width="13" height="52" rx="2" fill="${sh(compound,-32)}"/>
+<rect x="2" y="262" width="22" height="148" fill="#5A4028"/>
+<ellipse cx="13" cy="246" rx="42" ry="50" fill="${dayMode==='night'?'#1A3010':'#2A5A28'}"/>
+<ellipse cx="8" cy="230" rx="31" ry="40" fill="${dayMode==='night'?'#203818':'#336A30'}"/>
+<rect x="766" y="280" width="18" height="130" fill="#5A4028"/>
+<ellipse cx="775" cy="264" rx="36" ry="44" fill="${dayMode==='night'?'#1A3010':'#2A5A28'}"/>
+<ellipse cx="780" cy="252" rx="27" ry="35" fill="${dayMode==='night'?'#203818':'#336A30'}"/>
+${lamp}
+<line x1="0" y1="56" x2="800" y2="70" stroke="rgba(0,0,0,0.16)" stroke-width="1.5"/>
+<circle cx="160" cy="59" r="3" fill="rgba(0,0,0,0.18)"/>
+<circle cx="400" cy="64" r="3" fill="rgba(0,0,0,0.18)"/>
+<circle cx="640" cy="68" r="3" fill="rgba(0,0,0,0.18)"/>
+<rect x="-8" y="182" width="58" height="234" fill="${sh(compound,-8)}" opacity="0.35"/>
+<rect x="748" y="198" width="62" height="218" fill="${sh(compound,-8)}" opacity="0.3"/>
+<text x="400" y="512" text-anchor="middle" font-size="9" font-family="JetBrains Mono,monospace" fill="rgba(255,255,255,0.18)" letter-spacing="2">FRONT ELEVATION · 2/56B · WIDE ANGLE STREET VIEW</text>
+</svg>`;
+}
+
+// ─── RENDER INTERIOR ───
+function renderInt(){
+  const el=document.getElementById('rpanel');
+  el.innerHTML='<div class="plabel">Rooms</div>';
+  ROOMS.forEach((r,i)=>{
+    const b=document.createElement('button');
+    b.className='rbtn'+(i===ri?' active':'');
+    b.innerHTML=`<span class="rbtn-icon">${r.emoji}</span><span class="rbtn-name">${r.name}</span>`;
+    b.onclick=()=>{ri=i;wi=0;cat='All';pair=false;document.getElementById('si').value='';renderInt();};
+    el.appendChild(b);
+    if(i<ROOMS.length-1){const d=document.createElement('div');d.className='rdiv';el.appendChild(d);}
+  });
+  const room=R();
+  document.getElementById('rname').textContent=room.emoji+' '+room.name;
+  document.getElementById('rsub').textContent=room.sub;
+  
+  document.getElementById('wtabs').innerHTML=
+    room.walls.map((w,i)=>`<button class="wtab ${i===wi?'active':''}" onclick="selW(${i})">${w.split(' ')[0]}</button>`).join('');
+  document.getElementById('pcb').checked=pair;
+  
+  document.getElementById('svg3d').innerHTML=room3d(room,RS[room.id]);
+  const wc=RS[room.id];
+  
+  document.getElementById('wstrip').innerHTML=room.walls.map((name,i)=>{
+    const cid=wc[i];const c=cid==='TILES'?null:PAL.find(p=>p.id===cid);
+    return `<div class="wcard ${i===wi?'active':''}" onclick="selW(${i})">
+      <div class="wc-lbl">${name}</div>
+      <div class="wc-row">
+        <div class="wc-dot" style="background:${c?c.hex:'#7A6858'}"></div>
+        <div style="min-width:0"><div class="wc-name">${c?c.name:'Mosaic Tiles'}</div>
+        <div class="wc-code">${c?c.code:'Not painted'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  
+  document.getElementById('sbar').innerHTML=`<span style="color:var(--gold-l);margin-right:5px">💡</span>${room.suggestion}`;
+  document.getElementById('pbadge').textContent=room.walls[wi];
+  
+  const cats=['All',...new Set(PAL.map(p=>p.cat))];
+  document.getElementById('catrow').innerHTML=cats.map(c=>`<button class="cchip ${c===cat?'active':''}" onclick="selCat('${c}')">${c}</button>`).join('');
+  renderColors();
+}
+
+function renderColors(){
+  const room=R(),curId=RS[room.id][wi];
+  if(curId==='TILES'){
+    document.getElementById('cgrid').innerHTML=`<div style="grid-column:1/-1;padding:25px 12px;text-align:center;color:var(--muted);font-size:0.74rem;line-height:1.8"><div style="font-size:1.3rem;margin-bottom:7px">🎨</div>Original <strong style="color:var(--white)">mosaic tiles</strong>.<br>Not painted — tiles are the feature.<br><span style="font-size:0.63rem;opacity:0.5">Select another wall.</span></div>`;
+    return;
+  }
+  const s=document.getElementById('si').value.toLowerCase();
+  let list=PAL;
+  if(cat!=='All')list=list.filter(c=>c.cat===cat);
+  if(s)list=list.filter(c=>c.name.toLowerCase().includes(s)||c.code.toLowerCase().includes(s));
+  
+  document.getElementById('cgrid').innerHTML=list.map(c=>`
+    <div class="cchp ${c.id===curId?'sel':''}" onclick="applyC('${c.id}')">
+      <div class="csw" style="background:${c.hex}"></div>
+      <div class="cinf"><div class="cnm">${c.name}</div><div class="ccd">${c.code}</div></div>
+    </div>`).join('');
+}
+
+function selW(i){wi=i;renderInt();}
+function wsvg(i){selW(i);toast(R().walls[i]+' selected');}
+function togglePair(){pair=document.getElementById('pcb').checked;toast(pair?'Pair ON — opposite wall will also change':'Pair OFF');}
+function selCat(c){cat=c;renderColors();}
+function fc(){renderColors();}
+
+function applyC(id){
+  const room=R(),c=PAL.find(p=>p.id===id);if(!c)return;
+  RS[room.id][wi]=id;
+  if(pair){
+    room.pairs.forEach(pg=>{
+      if(pg.includes(wi)){pg.forEach(ow=>{if(ow!==wi&&RS[room.id][ow]!=='TILES')RS[room.id][ow]=id;});}
+    });
+  }
+  renderInt();
+  toast(`${room.walls[wi]}: ${c.name}${pair?' (+ paired wall)':''}`);
+}
+
+// ─── RENDER EXTERIOR ───
+function renderExt(){
+  document.getElementById('esvg').innerHTML=extSVG();
+  document.getElementById('ezstrip').innerHTML=EXT_ZONES.map(z=>`
+    <div class="ezcard ${z.id===ezone?'active':''}" onclick="selEZ('${z.id}')">
+      <div class="ezlbl">${z.label}</div>
+      <div class="ezrow"><div class="ezdot" style="background:${EZS[z.id]}"></div>
+      <div style="min-width:0"><div class="ezname">${z.name}</div><div class="ezcode">${z.code}</div></div></div>
+    </div>`).join('');
+  document.getElementById('esplits').innerHTML=EXT_SPLITS.map(s=>{
+    const lp=Math.round((1-s.ratio)*100),dp=Math.round(s.ratio*100);
+    return `<button class="sbtn ${s.id===esplit?'active':''}" onclick="selSplit('${s.id}')">
+      <div class="sbv"><div style="background:${EZS.upper};height:${lp}%"></div><div style="background:${EZS.lower};height:${dp}%"></div></div>
+      <div><div class="sb-l">${s.label}</div><div class="sb-s">${s.sub}</div></div>
+    </button>`;
+  }).join('');
+  document.getElementById('ebordbg').innerHTML=EXT_BORDS.map(b=>`
+    <button class="bopt ${b.id===ebord?'active':''}" onclick="selBord('${b.id}')">
+      <div class="bi">${b.icon}</div><div class="bl">${b.label}</div><div class="bs">${b.sub}</div>
+    </button>`).join('');
+    
+  // Exterior Advanced Color Picker
+  document.getElementById('eptitle').textContent=EXT_ZONES.find(z=>z.id===ezone)?.label+' Paint Selection';
+  const cats=['All',...new Set(PAL.map(p=>p.cat))];
+  document.getElementById('ext-catrow').innerHTML=cats.map(c=>`<button class="cchip ${c===ecat?'active':''}" onclick="selExtCat('${c}')">${c}</button>`).join('');
+  renderExtColors();
+
+  const sp=EXT_SPLITS.find(s=>s.id===esplit),bd=EXT_BORDS.find(b=>b.id===ebord);
+  const sa=sp.id==='s30'?'30/70 — elegant plinth effect, most common and refined.':sp.id==='s25'?'25/75 — very subtle base accent.':sp.id==='s40'?'40/60 — strong solid base look.':'50/50 — dramatic bold equal split.';
+  const ba=bd.id==='none'?'No border — cleanest modern look.':bd.id==='white'?'White line — subtle, defines transition crisply.':bd.id==='cream'?'Cream stripe — warm, traditional South Indian style.':'Stone coping — most premium, 3D architectural effect.';
+  
+  const zAdv=EXT_ZONES.find(z=>z.id===ezone)?.adv;
+  document.getElementById('eadv').innerHTML=`<strong>Paint Suggestion:</strong><br>For ${EXT_ZONES.find(z=>z.id===ezone)?.label}, ask for <strong style="color:var(--gold-l)">${zAdv}</strong> at the shop.<br><br><strong>Style:</strong> ${sa} ${ba}`;
+}
+
+function renderExtColors(){
+  const curHex=EZS[ezone];
+  const s=document.getElementById('esi').value.toLowerCase();
+  let list=PAL;
+  if(ecat!=='All')list=list.filter(c=>c.cat===ecat);
+  if(s)list=list.filter(c=>c.name.toLowerCase().includes(s)||c.code.toLowerCase().includes(s));
+  
+  document.getElementById('ext-cgrid').innerHTML=list.map(c=>`
+    <div class="cchp ${c.hex===curHex?'sel':''}" onclick="applyExt('${c.hex}','${c.name}','${c.code}')">
+      <div class="csw" style="background:${c.hex}"></div>
+      <div class="cinf"><div class="cnm">${c.name}</div><div class="ccd">${c.code}</div></div>
+    </div>`).join('');
+}
+
+function selExtCat(c){ecat=c;renderExtColors();}
+function efc(){renderExtColors();}
+function selEZ(id){ezone=id;renderExt();}
+function selSplit(id){esplit=id;renderExt();}
+function selBord(id){ebord=id;renderExt();}
+
+function applyExt(h, name, code){
+  const z=EXT_ZONES.find(z=>z.id===ezone);
+  if(z){EZS[ezone]=h; z.hex=h; z.name=name; z.code=code;}
+  renderExt(); toast('Applied to '+EXT_ZONES.find(z=>z.id===ezone)?.label);
+}
+
+function tod(t){
+  dayMode=t;
+  ['evDay','evDusk','evNight'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('ev'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('on');
+  renderExt();
+}
+
+function sw(v){
+  vw=v;
+  document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.htab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.htab').forEach(b=>{if(b.textContent.toLowerCase().includes(v.replace('int','interior')))b.classList.add('active');});
+  if(v==='ext')renderExt();
+}
+
+function doReset(){
+  if(vw==='int'){const r=R();RS[r.id]=[...r.colors];wi=0;pair=false;renderInt();toast('Reset to suggestions');}
+  else{EXT_ZONES.forEach(z=>{EZS[z.id]=z.hex;});esplit='s30';ebord='white';dayMode='day';tod('day');renderExt();toast('Exterior reset');}
+}
+
+// ─── PDF GENERATION WITH IMAGES ───
+async function doSummary(){
+  if(!window.jspdf) {
+    alert("PDF library loading... Please try again in 2 seconds.");
+    return;
+  }
+  toast('Generating PDF with Snaps... Please wait.');
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+
+  const svgToPng = (svgStr) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 800; canvas.height = 520;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => {
+        ctx.fillStyle = "#0F0D0A";
+        ctx.fillRect(0, 0, 800, 520);
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+    });
+  };
+
+  doc.setFontSize(18); doc.setFont("helvetica", "bold");
+  doc.text("YOUR COLOUR PLAN — 2/56B", 20, y); y += 10;
+  doc.setFontSize(11); doc.setFont("helvetica", "normal");
+  doc.text("Brand: Asian Paints Apcolite Premium Emulsion", 20, y); y += 6;
+  doc.text("Finishes: Matte (Dark Accent Walls) | Washable/Silk (Light Base Walls)", 20, y); y += 15;
+
+  for (const r of ROOMS) {
+    if (y > 230) { doc.addPage(); y = 20; }
+    
+    // Auto Generate Snap
+    const tempWi = wi; wi = -1; // Hide selection border for snap
+    const svgStr = room3d(r, RS[r.id]);
+    wi = tempWi; // Restore
+    const imgData = await svgToPng(svgStr);
+    
+    doc.addImage(imgData, 'PNG', 115, y, 75, 48);
+
+    doc.setFontSize(14); doc.setFont("helvetica", "bold");
+    doc.text(r.name, 20, y + 5);
+    
+    let ty = y + 15;
+    doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    r.walls.forEach((w, i) => {
+      const cid = RS[r.id][i];
+      const c = PAL.find(p => p.id === cid);
+      if (c) {
+        doc.setFillColor(c.hex); doc.rect(20, ty - 4, 6, 4, 'F');
+        doc.setDrawColor(150); doc.rect(20, ty - 4, 6, 4, 'D');
+        doc.text(`${w}: ${c.name} (${c.code})`, 30, ty);
+      } else {
+        doc.setDrawColor(100); doc.rect(20, ty - 4, 6, 4, 'D');
+        doc.text(`${w}: Mosaic Tiles`, 30, ty);
+      }
+      ty += 8;
+    });
+    y += 60;
+  }
+
+  if (y > 230) { doc.addPage(); y = 20; }
+  
+  const tempMode = dayMode; dayMode = 'day';
+  const extSvgStr = extSVG();
+  dayMode = tempMode; 
+  
+  const extImgData = await svgToPng(extSvgStr);
+  doc.addImage(extImgData, 'PNG', 115, y, 75, 48);
+
+  doc.setFontSize(14); doc.setFont("helvetica", "bold");
+  doc.text("EXTERIOR", 20, y + 5);
+  let ty = y + 15;
+  doc.setFontSize(10); doc.setFont("helvetica", "normal");
+  
+  EXT_ZONES.forEach(z => {
+    doc.setFillColor(EZS[z.id]); doc.rect(20, ty - 4, 6, 4, 'F');
+    doc.setDrawColor(150); doc.rect(20, ty - 4, 6, 4, 'D');
+    doc.text(`${z.label}: ${z.name} (${z.code})`, 30, ty);
+    ty += 7;
+    doc.setFontSize(8); doc.setTextColor(100);
+    doc.text(`Type: ${z.adv}`, 30, ty);
+    doc.setFontSize(10); doc.setTextColor(0);
+    ty += 7;
+  });
+  
+  doc.save("2_56B_Colour_Plan.pdf");
+  toast('PDF Downloaded Successfully!');
+}
+
+renderInt();
+</script>
+</body>
+</html>
